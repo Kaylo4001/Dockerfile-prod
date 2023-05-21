@@ -1,0 +1,25 @@
+FROM node:14 as build
+
+ENV PATH /app/node_modules/.bin:$PATH
+WORKDIR /app
+
+COPY package*.jason ./
+COPY *.tgz ./
+COPY .env ./
+RUN npm install
+RUN rm -r ./node_modules/jest
+COPY . ./
+RUN npm run build
+
+FROM nginx:1.19
+
+COPY --from=build /app/build /usr/share/nginx/html
+
+COPY ./nginx/nginx.conf /usr/share/nginx/nginx.conf
+COPY ./localhost-cert.pem /usr/share/nginx/localhost-cert.pem
+COPY ./localhost-key.pem /usr/share/nginx/localhost-key.pem
+
+EXPOSE 80
+EXPOSE 443
+
+CMD ["nginx","-c","/usr/share/nginx/nginx.conf"]
